@@ -353,6 +353,15 @@ def generate_round():
         elif player_bet == FOLD:
             print(colors.fg.lightcyan + "\n" + player_name + " Folds \n")
             folded_players[player_id] = True
+            # --- Check if only one player remains after fold ---
+            active_players = [p for p in current_player_ids if p not in folded_players]
+            if len(active_players) == 1:
+                winning_player_id = active_players[0]
+                print_colored(
+                    f"\n{players[winning_player_id]['name'].title()} is the last player remaining and wins!",
+                    colors.fg.lightgreen,
+                )
+                break # Exit the betting loop
         elif player_bet == SHOW:  # Handle Show
             print(colors.fg.lightcyan + f"\n{player_name} requests a Show.")
             preceding_player_id = find_preceding_active_player(
@@ -388,6 +397,16 @@ def generate_round():
                     print(
                         f"{colors.fg.lightcyan}{players[loser_id]['name'].title()} folds after the Show.\n"
                     )
+                    # --- Check if only one player remains after show ---
+                    active_players_after_show = [p for p in current_player_ids if p not in folded_players]
+                    if len(active_players_after_show) == 1:
+                        winning_player_id = active_players_after_show[0]
+                        print_colored(
+                            f"\n{players[winning_player_id]['name'].title()} wins as the last player after the show!",
+                            colors.fg.lightgreen
+                        )
+                        # Signal the outer loop to break after this inner loop finishes
+                        player_bet = END_BETTING
                     break
                 else:
                     print(
@@ -395,6 +414,9 @@ def generate_round():
                         + "Invalid input. Please enter either the requester's number or the preceding player's number."
                         + colors.reset
                     )
+            # If the show resulted in a winner, break the outer loop now
+            if player_bet == END_BETTING:
+                break
 
         elif player_bet > 0:  # Handle regular bet (Chaal)
             if player_bet < current_stake:
@@ -428,14 +450,7 @@ def generate_round():
         # Move to the next player
         current_index = (current_index + 1) % len(current_player_ids)
 
-        # Check if only one player is left
-        active_players = [p for p in current_player_ids if p not in folded_players]
-        if len(active_players) == 1:
-            winning_player_id = active_players[0]
-            print(
-                f"\n{colors.fg.lightcyan}{players[winning_player_id]['name'].title()} is the last player remaining."
-            )
-
+    # --- Winner Determination ---
     if not winning_player_id:
         print_players()
         winning_player_id = check_return_int_conversion(
